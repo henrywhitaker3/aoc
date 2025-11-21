@@ -5,16 +5,14 @@ import (
 	"context"
 	"fmt"
 
-	twentyfivedayone "github.com/henrywhitaker3/aoc/internal/twentyfive/dayone"
-	twentyfourdayone "github.com/henrywhitaker3/aoc/internal/twentyfour/dayone"
+	"github.com/henrywhitaker3/aoc/internal/twentyfive"
+	"github.com/henrywhitaker3/aoc/internal/twentyfour"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	solutions.Set(2025, 1, 1, twentyfivedayone.PartOne)
-	solutions.Set(2025, 1, 2, twentyfivedayone.PartTwo)
-	solutions.Set(2024, 1, 1, twentyfourdayone.PartOne)
-	solutions.Set(2024, 1, 2, twentyfourdayone.PartTwo)
+	twentyfour.Register(solutions)
+	twentyfive.Register(solutions)
 }
 
 func Cmd() *cobra.Command {
@@ -54,19 +52,17 @@ var (
 	solutions = Solutions{}
 )
 
-type PartFunc func(context.Context) error
-
-type Solutions map[string]PartFunc
+type Solutions map[string]func(context.Context) error
 
 func (s Solutions) key(year int, day int, part int) string {
 	return fmt.Sprintf("%d:%d:%d", year, day, part)
 }
 
-func (s Solutions) Get(year int, day int, part int) (PartFunc, bool) {
+func (s Solutions) Get(year int, day int, part int) (func(context.Context) error, bool) {
 	f, ok := s[s.key(year, day, part)]
 	return f, ok
 }
 
-func (s Solutions) Set(year, day, part int, f PartFunc) {
+func (s Solutions) Set(year, day, part int, f func(context.Context) error) {
 	s[s.key(year, day, part)] = f
 }
