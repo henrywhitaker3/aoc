@@ -6,14 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/henrywhitaker3/aoc/cmd/root"
+	"github.com/henrywhitaker3/aoc/cmd"
 )
 
 func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	cmd := root.Cmd()
+	cmd := cmd.Cmd()
 	cmd.SetContext(ctx)
 
 	if err := cmd.Execute(); err != nil {
