@@ -1,5 +1,5 @@
-// Package daythree
-package daythree
+// Package day3
+package day3
 
 import (
 	"context"

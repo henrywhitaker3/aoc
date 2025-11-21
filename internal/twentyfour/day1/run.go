@@ -1,5 +1,5 @@
-// Package dayone
-package dayone
+// Package day1
+package day1
 
 import (
 	"bufio"
