@@ -6,8 +6,16 @@ import (
 	"fmt"
 
 	twentyfivedayone "github.com/henrywhitaker3/aoc/internal/twentyfive/dayone"
+	twentyfourdayone "github.com/henrywhitaker3/aoc/internal/twentyfour/dayone"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	solutions.Set(2025, 1, 1, twentyfivedayone.PartOne)
+	solutions.Set(2025, 1, 2, twentyfivedayone.PartTwo)
+	solutions.Set(2024, 1, 1, twentyfourdayone.PartOne)
+	solutions.Set(2024, 1, 2, twentyfourdayone.PartTwo)
+}
 
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -45,11 +53,6 @@ func Cmd() *cobra.Command {
 var (
 	solutions = Solutions{}
 )
-
-func init() {
-	solutions.Set(2025, 1, 1, twentyfivedayone.PartOne)
-	solutions.Set(2025, 1, 2, twentyfivedayone.PartTwo)
-}
 
 type PartFunc func(context.Context) error
 
