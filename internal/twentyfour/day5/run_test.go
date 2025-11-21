@@ -27,6 +27,16 @@ func TestItParsesData(t *testing.T) {
 	require.Equal(t, 47, updates[len(updates)-1][4])
 }
 
+func TestItGetsTheIncorrectUpdates(t *testing.T) {
+	common.TestLogger(t)
+	rules, updates, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+
+	incorrect := rules.GetCorrectedUpdates(updates)
+	require.Equal(t, 3, len(incorrect))
+	require.Equal(t, 123, sumMiddleValues(incorrect))
+}
+
 func TestItGetsTheUpdates(t *testing.T) {
 	common.TestLogger(t)
 	rules, updates, err := ParseData([]byte(sample))

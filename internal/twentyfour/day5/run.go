@@ -5,6 +5,7 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"log/slog"
 	"math"
 	"slices"
 	"strconv"
@@ -26,6 +27,55 @@ ol:
 	}
 
 	return out
+}
+
+func (r Rules) GetCorrectedUpdates(updates []Update) []Update {
+	out := []Update{}
+ol:
+	for _, u := range updates {
+		for _, rule := range r {
+			if !rule.Passes(u) {
+				out = append(out, u)
+				continue ol
+			}
+		}
+	}
+
+	for len(out) != len(r.GetCorrectUpdates(out)) {
+		out = r.correctUpdates(out)
+	}
+
+	return out
+}
+
+func (r Rules) correctUpdates(u []Update) []Update {
+	out := []Update{}
+
+	for _, u := range u {
+		u = slices.Clone(u)
+		for _, r := range r {
+			for !r.Passes(u) {
+				slog.Debug("correcting value", "rule", r, "update", u)
+				u = correctUpdate(r, u)
+			}
+		}
+		slog.Debug("got corrected value", "update", u)
+		out = append(out, u)
+	}
+
+	return out
+}
+
+func correctUpdate(rule Rule, u Update) Update {
+	leftPos := slices.Index(u, rule.Left)
+	leftVal := u[leftPos]
+	rightPos := slices.Index(u, rule.Right)
+	rightVal := u[rightPos]
+
+	u[leftPos] = rightVal
+	u[rightPos] = leftVal
+
+	return u
 }
 
 type Rule struct {
@@ -144,5 +194,14 @@ func PartOne(ctx context.Context) error {
 }
 
 func PartTwo(ctx context.Context) error {
+	rules, updates, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse input: %w", err)
+	}
+
+	correct := rules.GetCorrectedUpdates(updates)
+
+	fmt.Printf("Sum: %d\n", sumMiddleValues(correct))
+
 	return nil
 }
