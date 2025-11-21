@@ -16,7 +16,21 @@ import (
 
 type Report []int
 
+func (r Report) Without(index int) Report {
+	out := Report{}
+	for i, v := range r {
+		if i == index {
+			continue
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
 func (r Report) Safe(tolerations int) bool {
+	if tolerations > 1 {
+		panic("only works for 1 toleration")
+	}
 	increasing := true
 
 	for i, v := range r {
@@ -33,11 +47,25 @@ func (r Report) Safe(tolerations int) bool {
 
 		safe := r.isReportSafe(v, r[i-1], diff, increasing)
 		if !safe {
+			if tolerations > 0 {
+				return toleratedSafe(r, tolerations)
+			}
 			return false
 		}
 	}
 
 	return true
+}
+
+func toleratedSafe(r Report, tolerations int) bool {
+	for range tolerations {
+		for j := range r {
+			if r.Without(j).Safe(0) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (r Report) isReportSafe(val int, prev int, diff int, increasing bool) bool {
