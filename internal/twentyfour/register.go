@@ -7,6 +7,7 @@ import (
 	"github.com/henrywhitaker3/aoc/internal/twentyfour/day2"
 	"github.com/henrywhitaker3/aoc/internal/twentyfour/day3"
 	"github.com/henrywhitaker3/aoc/internal/twentyfour/day4"
+	"github.com/henrywhitaker3/aoc/internal/twentyfour/day5"
 )
 
 func Register(r common.Registerer) {
@@ -18,4 +19,6 @@ func Register(r common.Registerer) {
 	r.Set(2024, 3, 2, day3.PartTwo)
 	r.Set(2024, 4, 1, day4.PartOne)
 	r.Set(2024, 4, 2, day4.PartTwo)
+	r.Set(2024, 5, 1, day5.PartOne)
+	r.Set(2024, 5, 2, day5.PartTwo)
 }
