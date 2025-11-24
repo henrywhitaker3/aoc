@@ -1,6 +1,7 @@
 package day6
 
 import (
+	"context"
 	_ "embed"
 	"testing"
 
@@ -26,6 +27,13 @@ func TestItCalculatesPartOneMoves(t *testing.T) {
 	m, err := ParseData([]byte(sample))
 	require.Nil(t, err)
 	require.Equal(t, 41, m.SumMoves())
+}
+
+func TestItCalculatesLoops(t *testing.T) {
+	common.TestLogger(t)
+	m, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+	require.Equal(t, 6, SumLoops(context.Background(), m.points))
 }
 
 func TestItChangesDirection(t *testing.T) {
