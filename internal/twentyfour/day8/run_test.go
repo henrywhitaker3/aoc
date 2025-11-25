@@ -2,6 +2,7 @@ package day8
 
 import (
 	_ "embed"
+	"math"
 	"testing"
 
 	"github.com/henrywhitaker3/aoc/internal/common"
@@ -27,11 +28,27 @@ func TestItFindsAntinodes(t *testing.T) {
 
 	allAntinodes := []Point{}
 	for _, freq := range m.uniqueFrequencies {
-		nodes := m.Antinodes(freq)
+		nodes := m.Antinodes(freq, 1)
 		allAntinodes = append(allAntinodes, nodes...)
 	}
 
 	filtered := Unique(allAntinodes)
 	t.Log(filtered)
 	require.Equal(t, 14, len(filtered))
+}
+
+func TestItFindsHarmonicAntiondes(t *testing.T) {
+	common.TestLogger(t)
+	m, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+
+	allAntinodes := []Point{}
+	for _, freq := range m.uniqueFrequencies {
+		nodes := m.Antinodes(freq, int(math.Inf(1)))
+		allAntinodes = append(allAntinodes, nodes...)
+	}
+
+	filtered := Unique(allAntinodes)
+	t.Log(filtered)
+	require.Equal(t, 34, len(filtered))
 }

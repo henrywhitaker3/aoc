@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math"
 	"slices"
 	"strings"
 )
@@ -28,7 +29,7 @@ type Map struct {
 	uniqueFrequencies []string
 }
 
-func (m *Map) Antinodes(freq string) []Point {
+func (m *Map) Antinodes(freq string, attempts int) []Point {
 	out := []Point{}
 
 	for i, a := range m.points {
@@ -39,6 +40,12 @@ func (m *Map) Antinodes(freq string) []Point {
 			if i == j || b.Frequency != freq {
 				continue
 			}
+
+			if attempts == int(math.Inf(1)) {
+				out = append(out, a)
+				out = append(out, b)
+			}
+
 			adX := a.X - b.X
 			adY := a.Y - b.Y
 			bdX := adX * -1
@@ -51,13 +58,28 @@ func (m *Map) Antinodes(freq string) []Point {
 				fmt.Sprintf("%d,%d", b.X, b.Y),
 			)
 
-			if p, ok := m.Find(a.X+adX, a.Y+adY); ok {
-				slog.Debug("found antinode", "node", fmt.Sprintf("%d,%d", p.X, p.Y))
-				out = append(out, p)
-			}
-			if p, ok := m.Find(b.X+bdX, b.Y+bdY); ok {
-				slog.Debug("found antinode", "node", fmt.Sprintf("%d,%d", p.X, p.Y))
-				out = append(out, p)
+			for k := range attempts {
+				slog.Debug("checking", "attempt", k+1)
+				adX := adX * (k + 1)
+				adY := adY * (k + 1)
+				bdX := bdX * (k + 1)
+				bdY := bdY * (k + 1)
+
+				found := false
+				if p, ok := m.Find(a.X+adX, a.Y+adY); ok {
+					slog.Debug("found antinode", "node", fmt.Sprintf("%d,%d", p.X, p.Y))
+					out = append(out, p)
+					found = true
+				}
+				if p, ok := m.Find(b.X+bdX, b.Y+bdY); ok {
+					slog.Debug("found antinode", "node", fmt.Sprintf("%d,%d", p.X, p.Y))
+					out = append(out, p)
+					found = true
+				}
+				if !found {
+					slog.Debug("breaking")
+					break
+				}
 			}
 		}
 	}
@@ -147,7 +169,7 @@ func PartOne(ctx context.Context) error {
 
 	antinodes := []Point{}
 	for _, freq := range m.uniqueFrequencies {
-		antinodes = append(antinodes, m.Antinodes(freq)...)
+		antinodes = append(antinodes, m.Antinodes(freq, 1)...)
 	}
 	antinodes = Unique(antinodes)
 
@@ -157,5 +179,18 @@ func PartOne(ctx context.Context) error {
 }
 
 func PartTwo(ctx context.Context) error {
+	m, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse data: %w", err)
+	}
+
+	antinodes := []Point{}
+	for _, freq := range m.uniqueFrequencies {
+		antinodes = append(antinodes, m.Antinodes(freq, int(math.Inf(1)))...)
+	}
+	antinodes = Unique(antinodes)
+
+	fmt.Printf("Count: %d\n", len(antinodes))
+
 	return nil
 }
