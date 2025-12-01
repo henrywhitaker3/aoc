@@ -31,11 +31,17 @@ func TestItGetsExpectedTurns(t *testing.T) {
 	dial.Go(turns, func(pos int) {
 		require.Equal(t, expected[i], pos)
 		i++
-	})
+	}, func(pos int) {})
 }
 
 func TestItCountsZeros(t *testing.T) {
 	turns, err := ParseData([]byte(sample))
 	require.Nil(t, err)
-	require.Equal(t, 3, CountZeros(turns, 50))
+	require.Equal(t, 3, CountZeroes(turns, 50))
+}
+
+func TestItCountsZeroClicks(t *testing.T) {
+	turns, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+	require.Equal(t, 6, CountZeroClicks(turns, 50))
 }

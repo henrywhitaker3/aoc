@@ -69,14 +69,14 @@ func NewDial(start int) *Dial {
 	}
 }
 
-func (d *Dial) Go(turns []Turn, cb func(pos int)) {
+func (d *Dial) Go(turns []Turn, final func(pos int), click func(pos int)) {
 	for _, t := range turns {
-		d.move(t.Direction, t.Quantity)
-		cb(d.pos)
+		d.move(t.Direction, t.Quantity, click)
+		final(d.pos)
 	}
 }
 
-func (d *Dial) move(direction Direction, amount int) {
+func (d *Dial) move(direction Direction, amount int, cb func(pos int)) {
 	for range amount {
 		switch direction {
 		case Left:
@@ -94,13 +94,25 @@ func (d *Dial) move(direction Direction, amount int) {
 		default:
 			panic("invalid direction")
 		}
+		cb(d.pos)
 	}
 }
 
-func CountZeros(turns []Turn, start int) int {
+func CountZeroes(turns []Turn, start int) int {
 	dial := NewDial(start)
 	count := 0
 	dial.Go(turns, func(pos int) {
+		if pos == 0 {
+			count++
+		}
+	}, func(pos int) {})
+	return count
+}
+
+func CountZeroClicks(turns []Turn, start int) int {
+	dial := NewDial(start)
+	count := 0
+	dial.Go(turns, func(pos int) {}, func(pos int) {
 		if pos == 0 {
 			count++
 		}
@@ -119,11 +131,18 @@ func PartOne(ctx context.Context) error {
 		return fmt.Errorf("parse input: %w", err)
 	}
 
-	fmt.Printf("Password: %d\n", CountZeros(turns, 50))
+	fmt.Printf("Password: %d\n", CountZeroes(turns, 50))
 
 	return nil
 }
 
 func PartTwo(ctx context.Context) error {
-	return fmt.Errorf("not implemented yet")
+	turns, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse input: %w", err)
+	}
+
+	fmt.Printf("Password: %d\n", CountZeroClicks(turns, 50))
+
+	return nil
 }
