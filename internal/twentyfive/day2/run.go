@@ -30,13 +30,21 @@ func ParseData(data []byte) ([]IDRange, error) {
 	return out, nil
 }
 
-func ValidateRanges(r []IDRange) ([]int, []int) {
+func ValidateRanges(r []IDRange, extended bool) ([]int, []int) {
 	valid := []int{}
 	invalid := []int{}
 
+	var validator func(int) bool
+	switch extended {
+	case true:
+		validator = isValidIDExtended
+	case false:
+		validator = isValidID
+	}
+
 	for _, r := range r {
 		for i := r[0]; i <= r[1]; i++ {
-			if isValidID(i) {
+			if validator(i) {
 				valid = append(valid, i)
 			} else {
 				invalid = append(invalid, i)
@@ -47,8 +55,8 @@ func ValidateRanges(r []IDRange) ([]int, []int) {
 	return valid, invalid
 }
 
-func SumInvalidIDs(r []IDRange) int {
-	_, invalid := ValidateRanges(r)
+func SumInvalidIDs(r []IDRange, extended bool) int {
+	_, invalid := ValidateRanges(r, extended)
 	out := 0
 	for _, i := range invalid {
 		slog.Debug("found invalid id", "id", i)
@@ -67,7 +75,26 @@ func isValidID(id int) bool {
 	first := asStr[0:(len(asStr) / 2)]
 	second := asStr[(len(asStr) / 2):]
 	slog.Debug("checking halves", "raw", asStr, "first", first, "second", second)
+
 	return first != second
+}
+
+func isValidIDExtended(id int) bool {
+	if !isValidID(id) {
+		return false
+	}
+
+	asStr := fmt.Sprintf("%d", id)
+
+	for i := range countDigits(id) / 2 {
+		match := asStr[:i+1]
+		slog.Debug("checking match", "id", id, "match", match)
+		if strings.ReplaceAll(asStr, match, "") == "" {
+			return false
+		}
+	}
+
+	return true
 }
 
 func countDigits(id int) int {
@@ -90,11 +117,18 @@ func PartOne(ctx context.Context) error {
 		return fmt.Errorf("parse input: %w", err)
 	}
 
-	fmt.Printf("Sum: %d\n", SumInvalidIDs(ranges))
+	fmt.Printf("Sum: %d\n", SumInvalidIDs(ranges, false))
 
 	return nil
 }
 
 func PartTwo(ctx context.Context) error {
+	ranges, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse input: %w", err)
+	}
+
+	fmt.Printf("Sum: %d\n", SumInvalidIDs(ranges, true))
+
 	return nil
 }

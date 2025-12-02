@@ -25,7 +25,14 @@ func TestItSumsInvalidIDs(t *testing.T) {
 	common.TestLogger(t)
 	ranges, err := ParseData([]byte(sample))
 	require.Nil(t, err)
-	require.Equal(t, 1227775554, SumInvalidIDs(ranges))
+	require.Equal(t, 1227775554, SumInvalidIDs(ranges, false))
+}
+
+func TestItSumsExtendsInvalidIDs(t *testing.T) {
+	common.TestLogger(t)
+	ranges, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+	require.Equal(t, 4174379265, SumInvalidIDs(ranges, true))
 }
 
 func TestItCountsDigitsInNumbers(t *testing.T) {
