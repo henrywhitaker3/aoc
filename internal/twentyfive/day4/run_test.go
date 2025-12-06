@@ -45,3 +45,9 @@ func TestItFindsMovablePoints(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 13, len(grid.MoveablePoints()))
 }
+
+func TestItCountsMovableAfterRemoving(t *testing.T) {
+	grid, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+	require.Equal(t, 43, grid.RemoveRolls())
+}

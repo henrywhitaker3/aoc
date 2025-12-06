@@ -49,6 +49,14 @@ func (g Grid) Find(x, y int) (Point, bool) {
 	return Point{}, false
 }
 
+func (g Grid) Remove(p Point) {
+	for i, gp := range g {
+		if p.X == gp.X && p.Y == gp.Y {
+			g[i].Paper = false
+		}
+	}
+}
+
 func (g Grid) AdjacentPaper(p Point) int {
 	out := 0
 	for _, n := range g.adjacentPoints(p) {
@@ -89,6 +97,23 @@ func (g Grid) MoveablePoints() []Point {
 			out = append(out, p)
 		}
 	}
+	return out
+}
+
+func (g Grid) RemoveRolls() int {
+	out := 0
+
+	for {
+		moveable := g.MoveablePoints()
+		if len(moveable) == 0 {
+			break
+		}
+		for _, p := range moveable {
+			g.Remove(p)
+			out++
+		}
+	}
+
 	return out
 }
 
@@ -141,5 +166,12 @@ func PartOne(ctx context.Context) error {
 }
 
 func PartTwo(ctx context.Context) error {
+	grid, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse input: %w", err)
+	}
+
+	fmt.Printf("Count: %d\n", grid.RemoveRolls())
+
 	return nil
 }
