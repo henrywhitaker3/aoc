@@ -8,6 +8,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
+	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
@@ -15,31 +16,38 @@ import (
 
 type Bank []int
 
-func (b Bank) LargestJoltage() int {
-	cloned := slices.Clone(b)
-	slices.Sort(cloned)
-	slices.Reverse(cloned)
-
-	pick := 0
-	for {
-		val := cloned[pick]
-		if slices.Index(b, val) == (len(b) - 1) {
-			// Move to the next one, there's no other number to put next if
-			// it is at the end
-			pick++
-			continue
-		}
-		break
+func (b Bank) LargestJoltage(digits int) int {
+	out := []int{}
+	candidates := slices.Clone(b)
+	for len(out) < digits {
+		slog.Debug("got candidates", "candidates", candidates, "out", out)
+		dig, next := findNextDigit(candidates, digits-len(out))
+		out = append(out, dig)
+		candidates = next
+		slog.Debug("picked out", "picked", dig)
 	}
 
-	first := cloned[pick]
-	remaining := slices.Clone(b[slices.Index(b, first)+1:])
-	slices.Sort(remaining)
-	slices.Reverse(remaining)
-	second := b[slices.Index(b, remaining[0])]
+	arranged := ""
+	for _, d := range out {
+		arranged = fmt.Sprintf("%s%d", arranged, d)
+	}
+	dig, _ := strconv.Atoi(arranged)
 
-	out, _ := strconv.Atoi(fmt.Sprintf("%d%d", first, second))
-	return out
+	return dig
+}
+
+func findNextDigit(bank Bank, digits int) (int, Bank) {
+	candidates := slices.Clone(bank)[0 : len(bank)-(digits-1)]
+	index, digit := findLargestAtIndex(candidates)
+	return digit, bank[index+1:]
+}
+
+func findLargestAtIndex(digits Bank) (int, int) {
+	cloned := slices.Clone(digits)
+	slices.Sort(cloned)
+	slices.Reverse(cloned)
+	slog.Debug("picking first digit", "from", cloned)
+	return slices.Index(digits, cloned[0]), cloned[0]
 }
 
 func ParseData(data []byte) ([]Bank, error) {
@@ -75,10 +83,10 @@ func parseLine(line string) (Bank, error) {
 	return out, nil
 }
 
-func SumLargestJoltages(banks []Bank) int {
+func SumLargestJoltages(banks []Bank, digits int) int {
 	sums := []int{}
 	for _, b := range banks {
-		sums = append(sums, b.LargestJoltage())
+		sums = append(sums, b.LargestJoltage(digits))
 	}
 	out := 0
 	for _, s := range sums {
@@ -98,11 +106,18 @@ func PartOne(ctx context.Context) error {
 		return fmt.Errorf("parse input: %w", err)
 	}
 
-	fmt.Printf("Sum: %d\n", SumLargestJoltages(banks))
+	fmt.Printf("Sum: %d\n", SumLargestJoltages(banks, 2))
 
 	return nil
 }
 
 func PartTwo(ctx context.Context) error {
+	banks, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse input: %w", err)
+	}
+
+	fmt.Printf("Sum: %d\n", SumLargestJoltages(banks, 12))
+
 	return nil
 }

@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"testing"
 
+	"github.com/henrywhitaker3/aoc/internal/common"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,16 +22,23 @@ func TestItParsesData(t *testing.T) {
 }
 
 func TestItFindsLargestJoltages(t *testing.T) {
+	common.TestLogger(t)
 	banks, err := ParseData([]byte(sample))
 	require.Nil(t, err)
-	require.Equal(t, 98, banks[0].LargestJoltage())
-	require.Equal(t, 89, banks[1].LargestJoltage())
-	require.Equal(t, 78, banks[2].LargestJoltage())
-	require.Equal(t, 92, banks[3].LargestJoltage())
+	require.Equal(t, 98, banks[0].LargestJoltage(2))
+	require.Equal(t, 89, banks[1].LargestJoltage(2))
+	require.Equal(t, 78, banks[2].LargestJoltage(2))
+	require.Equal(t, 92, banks[3].LargestJoltage(2))
 }
 
-func TestItSumsLargestJoltages(t *testing.T) {
+func TestItSums2LargestJoltages(t *testing.T) {
 	banks, err := ParseData([]byte(sample))
 	require.Nil(t, err)
-	require.Equal(t, 357, SumLargestJoltages(banks))
+	require.Equal(t, 357, SumLargestJoltages(banks, 2))
+}
+
+func TestItSums12LargestJoltages(t *testing.T) {
+	banks, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+	require.Equal(t, 3121910778619, SumLargestJoltages(banks, 12))
 }
