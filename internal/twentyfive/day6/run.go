@@ -20,35 +20,39 @@ var (
 type Operator string
 
 const (
-	Multiply = "*"
-	Add      = "+"
+	Multiply Operator = "*"
+	Add      Operator = "+"
 )
 
-type Operand[T any] struct {
-	parsed T
-}
+type Operand int
 
-func (o Operand[T]) Value() T {
-	return o.parsed
+func (o Operand) Digits() int {
+	out := 0
+	num := o
+	for num > 0 {
+		num = num / 10
+		out++
+	}
+	return out
 }
 
 type Calculation struct {
-	Numbers  []Operand[int]
-	Operator Operand[Operator]
+	Numbers  []Operand
+	Operator Operator
 }
 
 func (c Calculation) Calculate() int {
 	out := 0
 	for i, n := range c.Numbers {
 		if i == 0 {
-			out = n.Value()
+			out = int(n)
 			continue
 		}
-		switch c.Operator.Value() {
+		switch c.Operator {
 		case Multiply:
-			out *= n.Value()
+			out *= int(n)
 		case Add:
-			out += n.Value()
+			out += int(n)
 		}
 	}
 	return out
@@ -65,8 +69,8 @@ func SumResults(input []Calculation) int {
 func ParseData(data []byte) ([]Calculation, error) {
 	r := bufio.NewReader(bytes.NewReader(data))
 
-	operands := [][]Operand[int]{}
-	operators := []Operand[Operator]{}
+	operands := [][]Operand{}
+	operators := []Operator{}
 	for {
 		line, err := r.ReadString('\n')
 		if err != nil {
@@ -108,25 +112,23 @@ func ParseData(data []byte) ([]Calculation, error) {
 	return out, nil
 }
 
-func parseDigits(m []string) ([]Operand[int], error) {
-	out := []Operand[int]{}
+func parseDigits(m []string) ([]Operand, error) {
+	out := []Operand{}
 	for _, m := range m {
 		dig, err := strconv.Atoi(m)
 		if err != nil {
 			return nil, fmt.Errorf("parse int: %w", err)
 		}
-		out = append(out, Operand[int]{
-			parsed: dig,
-		})
+		out = append(out, Operand(dig))
 	}
 	return out, nil
 }
 
-func parseOperators(m []string) ([]Operand[Operator], error) {
-	out := []Operand[Operator]{}
+func parseOperators(m []string) ([]Operator, error) {
+	out := []Operator{}
 	for _, m := range m {
 		var op Operator
-		switch m {
+		switch Operator(m) {
 		case Multiply:
 			op = Multiply
 		case Add:
@@ -134,9 +136,7 @@ func parseOperators(m []string) ([]Operand[Operator], error) {
 		default:
 			return nil, fmt.Errorf("unknown operator %s", m)
 		}
-		out = append(out, Operand[Operator]{
-			parsed: op,
-		})
+		out = append(out, op)
 	}
 	return out, nil
 }

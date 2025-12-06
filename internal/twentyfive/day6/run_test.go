@@ -19,20 +19,14 @@ func TestItParsesData(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(
 		t,
-		[]Operand[int]{
-			{
-				parsed: 123,
-			},
-			{
-				parsed: 45,
-			},
-			{
-				parsed: 6,
-			},
+		[]Operand{
+			123,
+			45,
+			6,
 		},
 		calcs[0].Numbers,
 	)
-	require.Equal(t, Operand[Operator]{parsed: Multiply}, calcs[0].Operator)
+	require.Equal(t, Multiply, calcs[0].Operator)
 }
 
 func TestItSumsAnswers(t *testing.T) {
