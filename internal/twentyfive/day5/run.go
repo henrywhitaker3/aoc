@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -23,7 +24,7 @@ func (d Database) Fresh() []int {
 	for _, r := range d.ranges {
 		checks = append(checks, func(i int) bool {
 			slog.Debug("checking against range", "start", r[0], "end", r[1], "i", i)
-			return i >= r[0] && i <= r[1]
+			return inRange(r, i)
 		})
 	}
 
@@ -39,6 +40,44 @@ ol:
 	}
 
 	return out
+}
+
+func (d Database) ConsideredFresh() int {
+	slices.SortFunc(d.ranges, func(a, b []int) int {
+		return a[0] - b[0]
+	})
+	slog.Debug("sorted ranges", "ranges", d.ranges)
+
+	cons := consolidateRanges(d.ranges)
+	slog.Debug("consolidated ranges", "ranges", cons)
+
+	out := 0
+	for _, r := range cons {
+		out += r[1] - r[0] + 1
+	}
+
+	return out
+}
+
+func consolidateRanges(ra [][]int) [][]int {
+	out := [][]int{}
+
+ol:
+	for _, r := range ra {
+		for j, jr := range out {
+			if inRange(jr, r[0]) {
+				out[j][1] = max(r[1], jr[1])
+				continue ol
+			}
+		}
+		out = append(out, r)
+	}
+
+	return out
+}
+
+func inRange(r []int, t int) bool {
+	return t >= r[0] && t <= r[1]
 }
 
 func ParseData(data []byte) (*Database, error) {
@@ -71,6 +110,11 @@ func ParseData(data []byte) (*Database, error) {
 			out.ingredients = append(out.ingredients, id)
 		}
 	}
+
+	slices.SortFunc(out.ranges, func(a []int, b []int) int {
+		return a[0] - b[0]
+	})
+
 	return out, nil
 }
 
@@ -107,5 +151,12 @@ func PartOne(ctx context.Context) error {
 }
 
 func PartTwo(ctx context.Context) error {
+	db, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse input: %w", err)
+	}
+
+	fmt.Printf("Count: %d\n", db.ConsideredFresh())
+
 	return nil
 }

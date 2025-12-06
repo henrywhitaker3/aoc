@@ -37,3 +37,11 @@ func TestItCollectsFreshIngredients(t *testing.T) {
 
 	require.Equal(t, 3, len(db.Fresh()))
 }
+
+func TestItReturnsAllPossibleFreshIDs(t *testing.T) {
+	common.TestLogger(t)
+	db, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+
+	require.Equal(t, 14, db.ConsideredFresh())
+}
