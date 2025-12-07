@@ -127,6 +127,64 @@ func CountSplits(m Manifold) int {
 	return len(splits)
 }
 
+func CountTimelines(m Manifold) int {
+	memo := Memoise[int]()
+	start := m.Start()
+	return countTimelines(memo, m, start.X, start.Y)
+}
+
+type Memoised[T any] struct {
+	cache map[string]T
+	run   any
+}
+
+func Memoise[T any]() *Memoised[T] {
+	return &Memoised[T]{
+		cache: map[string]T{},
+	}
+}
+
+func (m *Memoised[T]) Run(key string, f func() T) T {
+	if val, ok := m.cache[key]; ok {
+		return val
+	}
+	val := f()
+	m.cache[key] = val
+	return val
+}
+
+func countTimelines(memo *Memoised[int], m Manifold, x, y int) int {
+	_, point, ok := m.Find(x, y)
+	if !ok {
+		return 1
+	}
+
+	call := func(m Manifold, x, y int) func() int {
+		return func() int {
+			return countTimelines(memo, m, x, y)
+		}
+	}
+	key := func(x, y int) string {
+		return fmt.Sprintf("%d,%d", x, y)
+	}
+
+	if point.Split() {
+		return memo.Run(
+			key(point.X-1, point.Y+1),
+			call(m, point.X-1, point.Y+1),
+		) + memo.Run(
+			key(point.X+1, point.Y+1),
+			call(
+				m,
+				point.X+1,
+				point.Y+1,
+			),
+		)
+	}
+
+	return memo.Run(key(point.X, point.Y+1), call(m, point.X, point.Y+1))
+}
+
 func indexOk[T any](s []T, i int) (T, bool) {
 	if i < 0 || i >= len(s) {
 		var out T
@@ -184,5 +242,13 @@ func PartOne(ctx context.Context) error {
 }
 
 func PartTwo(ctx context.Context) error {
+	man, err := ParseData([]byte(input))
+	if err != nil {
+		return fmt.Errorf("parse data: %w", err)
+	}
+	slog.Debug("parsed data")
+
+	fmt.Printf("Splits: %d\n", CountTimelines(man))
+
 	return nil
 }

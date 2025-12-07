@@ -25,5 +25,15 @@ func TestItCountsSplits(t *testing.T) {
 	man, err := ParseData([]byte(sample))
 	require.Nil(t, err)
 
-	require.Equal(t, 21, CountSplits(man))
+	splits := CountSplits(man)
+	require.Equal(t, 21, splits)
+}
+
+func TestItCountsTimelines(t *testing.T) {
+	common.TestLogger(t)
+	man, err := ParseData([]byte(sample))
+	require.Nil(t, err)
+
+	require.Equal(t, 40, CountTimelines(man))
+	require.True(t, false)
 }
