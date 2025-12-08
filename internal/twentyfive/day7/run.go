@@ -10,12 +10,28 @@ import (
 	"io"
 	"log/slog"
 	"strings"
+
+	"github.com/henrywhitaker3/aoc/internal/caching"
+	"github.com/henrywhitaker3/aoc/internal/grid"
+	"github.com/henrywhitaker3/aoc/internal/timing"
 )
 
 type Point struct {
-	X    int
-	Y    int
+	x    int
+	y    int
 	char string
+}
+
+func (p Point) X() int {
+	return p.x
+}
+
+func (p Point) Y() int {
+	return p.y
+}
+
+func (p Point) String() string {
+	return p.char
 }
 
 func (p Point) Split() bool {
@@ -30,28 +46,27 @@ func (p Point) Visited() bool {
 	return p.char == "|"
 }
 
-func (p Point) String() string {
-	return fmt.Sprintf("%d,%d", p.X, p.Y)
+func (p Point) Key() string {
+	return fmt.Sprintf("%d,%d", p.X, p.y)
 }
 
-type Manifold []Point
+type Manifold struct {
+	*grid.Grid[Point]
+}
+
+func NewManifold() *Manifold {
+	return &Manifold{
+		Grid: grid.New[Point](),
+	}
+}
 
 func (m Manifold) Start() Point {
-	for _, p := range m {
+	for _, p := range m.Points() {
 		if p.Start() {
 			return p
 		}
 	}
 	panic("not start point found")
-}
-
-func (m Manifold) Find(x, y int) (int, Point, bool) {
-	for i, p := range m {
-		if p.X == x && p.Y == y {
-			return i, p, true
-		}
-	}
-	return 0, Point{}, false
 }
 
 func (m Manifold) Next(x, y int) (Point, bool) {
@@ -60,10 +75,11 @@ func (m Manifold) Next(x, y int) (Point, bool) {
 }
 
 func (m Manifold) Update(p Point, char string) {
-	if i, _, ok := m.Find(p.X, p.Y); ok {
-		if !p.Split() {
-			m[i].char = char
-		}
+	if !m.Grid.Update(p.X(), p.Y(), func(p Point) Point {
+		p.char = char
+		return p
+	}) {
+		panic("could not update point")
 	}
 }
 
@@ -71,8 +87,8 @@ func (m Manifold) String() string {
 	out := []string{}
 	y := 0
 	str := ""
-	for _, p := range m {
-		if p.Y > y {
+	for _, p := range m.Points() {
+		if p.y > y {
 			out = append(out, str)
 			str = ""
 			y++
@@ -82,7 +98,7 @@ func (m Manifold) String() string {
 	return strings.Join(out, "\n")
 }
 
-func CountSplits(m Manifold) int {
+func CountSplits(m *Manifold) int {
 	splits := map[string]struct{}{}
 
 	beams := []Point{m.Start()}
@@ -94,7 +110,7 @@ func CountSplits(m Manifold) int {
 		}
 		for {
 			slog.Debug("checking beam", "beam", beam)
-			next, ok := m.Next(beam.X, beam.Y)
+			next, ok := m.Next(beam.X(), beam.Y())
 			if !ok {
 				// If it doesn't ecist, then we've exited the manifold
 				break
@@ -108,15 +124,15 @@ func CountSplits(m Manifold) int {
 				// for new beams to add to the path
 				slog.Debug("got split", "beam", beam, "split", next)
 				splits[next.String()] = struct{}{}
-				if _, left, ok := m.Find(next.X-1, next.Y); ok {
+				if _, left, ok := m.Find(next.X()-1, next.Y()); ok {
 					beams = append(beams, left)
 				}
-				if _, right, ok := m.Find(next.X+1, next.Y); ok {
+				if _, right, ok := m.Find(next.X()+1, next.Y()); ok {
 					beams = append(beams, right)
 				}
 				break
 			}
-			beam.Y = next.Y
+			beam.y = next.y
 		}
 		i++
 		slog.Debug("beam escaped", "beam", beam)
@@ -127,39 +143,19 @@ func CountSplits(m Manifold) int {
 	return len(splits)
 }
 
-func CountTimelines(m Manifold) int {
-	memo := Memoise[int]()
+func CountTimelines(m *Manifold) int {
+	memo := caching.Memoise[int]()
 	start := m.Start()
-	return countTimelines(memo, m, start.X, start.Y)
+	return countTimelines(memo, m, start.X(), start.Y())
 }
 
-type Memoised[T any] struct {
-	cache map[string]T
-	run   any
-}
-
-func Memoise[T any]() *Memoised[T] {
-	return &Memoised[T]{
-		cache: map[string]T{},
-	}
-}
-
-func (m *Memoised[T]) Run(key string, f func() T) T {
-	if val, ok := m.cache[key]; ok {
-		return val
-	}
-	val := f()
-	m.cache[key] = val
-	return val
-}
-
-func countTimelines(memo *Memoised[int], m Manifold, x, y int) int {
+func countTimelines(memo *caching.Memoised[int], m *Manifold, x, y int) int {
 	_, point, ok := m.Find(x, y)
 	if !ok {
 		return 1
 	}
 
-	call := func(m Manifold, x, y int) func() int {
+	call := func(m *Manifold, x, y int) func() int {
 		return func() int {
 			return countTimelines(memo, m, x, y)
 		}
@@ -170,19 +166,19 @@ func countTimelines(memo *Memoised[int], m Manifold, x, y int) int {
 
 	if point.Split() {
 		return memo.Run(
-			key(point.X-1, point.Y+1),
-			call(m, point.X-1, point.Y+1),
+			key(point.X()-1, point.Y()+1),
+			call(m, point.X()-1, point.Y()+1),
 		) + memo.Run(
-			key(point.X+1, point.Y+1),
+			key(point.X()+1, point.Y()+1),
 			call(
 				m,
-				point.X+1,
-				point.Y+1,
+				point.X()+1,
+				point.Y()+1,
 			),
 		)
 	}
 
-	return memo.Run(key(point.X, point.Y+1), call(m, point.X, point.Y+1))
+	return memo.Run(key(point.X(), point.Y()+1), call(m, point.X(), point.Y()+1))
 }
 
 func indexOk[T any](s []T, i int) (T, bool) {
@@ -193,10 +189,10 @@ func indexOk[T any](s []T, i int) (T, bool) {
 	return s[i], true
 }
 
-func ParseData(data []byte) (Manifold, error) {
+func ParseData(data []byte) (*Manifold, error) {
 	r := bufio.NewReader(bytes.NewReader(data))
 
-	out := Manifold{}
+	out := NewManifold()
 	y := 0
 	for {
 		line, err := r.ReadString('\n')
@@ -206,7 +202,7 @@ func ParseData(data []byte) (Manifold, error) {
 			}
 			return nil, fmt.Errorf("read line: %w", err)
 		}
-		out = append(out, parseLine(strings.Trim(line, "\n"), y)...)
+		out.Push(parseLine(strings.Trim(line, "\n"), y)...)
 		y++
 	}
 	return out, nil
@@ -216,8 +212,8 @@ func parseLine(line string, y int) []Point {
 	out := []Point{}
 	for x, char := range line {
 		out = append(out, Point{
-			X:    x,
-			Y:    y,
+			x:    x,
+			y:    y,
 			char: string(char),
 		})
 	}
@@ -236,7 +232,9 @@ func PartOne(ctx context.Context) error {
 	}
 	slog.Debug("parsed data")
 
-	fmt.Printf("Splits: %d\n", CountSplits(man))
+	timing.Timed(func() {
+		fmt.Printf("Splits: %d\n", CountSplits(man))
+	})
 
 	return nil
 }
@@ -248,7 +246,9 @@ func PartTwo(ctx context.Context) error {
 	}
 	slog.Debug("parsed data")
 
-	fmt.Printf("Splits: %d\n", CountTimelines(man))
+	timing.Timed(func() {
+		fmt.Printf("Splits: %d\n", CountTimelines(man))
+	})
 
 	return nil
 }
